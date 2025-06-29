@@ -7,7 +7,6 @@ import MapboxUserMarker from "./MapboxUserMarker";
 import { mockNodes } from "@/constants/nodeInfo";
 import MapboxNodeMarker from "./MapboxNodeMarker";
 import type { MapNode } from "@/types/nodeType";
-import { formatWalletAddress } from "@/lib/utils";
 import InfoBox from "./InfoBox";
 
 interface MapboxProps {

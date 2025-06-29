@@ -1,14 +1,12 @@
 'use client';
 import MobileStatusBar from "@/components/mobileStatus";
 import Navbar from "@/components/navbar";
-import dynamic from "next/dynamic";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useSwitchChain } from 'wagmi';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
+import Mapbox from "@/components/mapbox";
 
 const FILECOIN_CALIBRATION_CHAIN_ID = 314159;
-
-const Mapbox = dynamic(() => import("@/components/mapbox"), { ssr: false });
 
 export default function Home() {
   const { isConnected, chain } = useAccount();
