@@ -1,3 +1,5 @@
+'use client'
+
 import React from "react";
 import { formatWalletAddress } from "@/lib/utils";
 import type { MapNode } from "@/types/nodeType";

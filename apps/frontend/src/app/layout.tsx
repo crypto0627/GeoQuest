@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "@/context/web3Provider";
+import ContextProvider from "@/context/provider";
+import { headers } from 'next/headers'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,17 +19,23 @@ export const metadata: Metadata = {
   description: "Explore the Earth freely and create your own landmarks. All landmarks are unique and cannot be copied.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const headersObj = await headers();
+  const cookies = headersObj.get('cookie')
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <ContextProvider cookies={cookies}>
+          {children}
+        </ContextProvider>
       </body>
     </html>
   );

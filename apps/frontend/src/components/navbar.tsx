@@ -1,3 +1,5 @@
+'use client'
+
 import { User, ChevronLeft } from "lucide-react";
 import { useState, useRef } from "react";
 import { useAccount, useBalance } from "wagmi";
