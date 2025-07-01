@@ -1,15 +1,35 @@
 'use client'
 
-import { User, ChevronLeft } from "lucide-react";
+import { User, ChevronLeft, LogOut, RefreshCw, Layers } from "lucide-react";
 import { useState, useRef } from "react";
-import { useAccount, useBalance } from "wagmi";
+import { useAccount, useBalance, useDisconnect, useSwitchAccount, useSwitchChain } from "wagmi";
 
-export default function Navbar() {
+type Status = 'idle' | 'pending' | 'error' | 'success';
+
+export default function Navbar({ showPopover, setShowPopover }: { showPopover?: boolean, setShowPopover?: (v: boolean) => void }) {
   const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [showPopover, setShowPopover] = useState(false);
+  const [internalShowPopover, internalSetShowPopover] = useState(false);
+  const actualShowPopover = typeof showPopover === 'boolean' ? showPopover : internalShowPopover;
+  const actualSetShowPopover = setShowPopover || internalSetShowPopover;
+
   const { address, isConnected, chain } = useAccount();
   const { data: balance } = useBalance({ address });
+  const { disconnect } = useDisconnect();
+
+  // For switching account
+  const { connectors, switchAccount, status: switchAccountStatus } = useSwitchAccount();
+
+  // For switching chain
+  const { chains, switchChain, status: switchChainStatus } = useSwitchChain();
+
+  // Helper for truncating address
+  const truncateAddress = (addr?: string) =>
+    addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
+
+  // Status helpers
+  const isSwitchingAccount = switchAccountStatus === 'pending';
+  const isSwitchingChain = switchChainStatus === 'pending';
 
   return (
     <nav className="absolute top-8 left-1/2 -translate-x-1/2 w-[92%] max-w-xl z-40 bg-white h-14 px-4 shadow-xl flex items-center rounded-2xl border border-neutral-200 backdrop-blur-md transition-all duration-200">
@@ -62,19 +82,116 @@ export default function Navbar() {
           <div
             className="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-100 via-white to-blue-200 flex items-center justify-center cursor-pointer transition-opacity hover:opacity-90"
             aria-label="User Profile"
-            onMouseEnter={() => setShowPopover(true)}
-            onMouseLeave={() => setShowPopover(false)}
-            onClick={() => setShowPopover((v) => !v)}
+            onClick={() => actualSetShowPopover(!actualShowPopover)}
+            tabIndex={0}
           >
             <User size={26} className="text-blue-500" />
           </div>
           {/* Popover */}
-          {showPopover && isConnected && (
-            <div className="absolute right-0 top-14 mt-2 w-72 bg-white rounded-xl shadow-xl border border-neutral-200 p-4 z-50 text-sm animate-fade-in">
-              <div className="mb-2 font-semibold text-neutral-700">Wallet Info</div>
-              <div className="mb-1"><span className="text-neutral-500">Address:</span><br /><span className="break-all font-mono">{address}</span></div>
-              <div className="mb-1"><span className="text-neutral-500">Chain:</span> {chain?.name}</div>
-              <div className="mb-1"><span className="text-neutral-500">Balance:</span> {balance ? `${balance.formatted} ${balance.symbol}` : '--'}</div>
+          {actualShowPopover && isConnected && (
+            <div
+              className="absolute right-0 top-14 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-neutral-200 p-5 z-50 text-sm animate-fade-in"
+              style={{ minWidth: 300 }}
+            >
+              <div className="mb-3 flex items-center gap-2 font-semibold text-neutral-700">
+                <User size={18} className="text-blue-500" />
+                Wallet Info
+              </div>
+              <div className="mb-2">
+                <span className="text-neutral-500">Address:</span>
+                <br />
+                <span className="break-all font-mono text-[15px] text-blue-700">{truncateAddress(address)}</span>
+              </div>
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-neutral-500">Chain:</span>
+                <span className="font-medium">{chain?.name}</span>
+              </div>
+              <div className="mb-4 flex items-center gap-2">
+                <span className="text-neutral-500">Balance:</span>
+                <span className="font-medium">{balance ? `${balance.formatted} ${balance.symbol}` : '--'}</span>
+              </div>
+              <div className="border-t border-neutral-200 my-3" />
+              {/* Switch Account */}
+              <div className="mb-3">
+                <div className="flex items-center gap-2 mb-1 text-neutral-600 font-semibold">
+                  <RefreshCw size={16} className="text-blue-400" />
+                  Switch Account
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {connectors.map((connector) => (
+                    <button
+                      key={connector.id}
+                      onClick={() => switchAccount({ connector })}
+                      disabled={isSwitchingAccount}
+                      className={`px-3 py-1.5 rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-blue-50 transition text-xs font-medium ${
+                        isSwitchingAccount
+                          ? "opacity-60 cursor-wait"
+                          : ""
+                      }`}
+                    >
+                      {connector.name}
+                      {isSwitchingAccount && (
+                        <span className="ml-2 animate-spin inline-block"><RefreshCw size={14} /></span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {/* Status message for switch account */}
+                {switchAccountStatus === 'error' && (
+                  <div className="text-xs text-red-500 mt-1">Failed to switch account.</div>
+                )}
+                {switchAccountStatus === 'success' && (
+                  <div className="text-xs text-green-600 mt-1">Account switched successfully.</div>
+                )}
+              </div>
+              {/* Switch Network */}
+              <div className="mb-3">
+                <div className="flex items-center gap-2 mb-1 text-neutral-600 font-semibold">
+                  <Layers size={16} className="text-blue-400" />
+                  Switch Network
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {chains.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => switchChain({ chainId: c.id })}
+                      disabled={isSwitchingChain}
+                      className={`px-3 py-1.5 rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-blue-50 transition text-xs font-medium ${
+                        chain?.id === c.id ? "bg-blue-100 border-blue-300 text-blue-700" : ""
+                      } ${
+                        isSwitchingChain
+                          ? "opacity-60 cursor-wait"
+                          : ""
+                      }`}
+                    >
+                      {c.name}
+                      {isSwitchingChain && (
+                        <span className="ml-2 animate-spin inline-block"><RefreshCw size={14} /></span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {/* Status message for switch chain */}
+                {switchChainStatus === 'error' && (
+                  <div className="text-xs text-red-500 mt-1">Failed to switch network.</div>
+                )}
+                {switchChainStatus === 'success' && (
+                  <div className="text-xs text-green-600 mt-1">Network switched successfully.</div>
+                )}
+              </div>
+              {/* Logout */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    disconnect();
+                    actualSetShowPopover(false);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-medium text-xs border border-red-200 transition"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
             </div>
           )}
         </div>

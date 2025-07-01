@@ -5,4 +5,5 @@ export type MapNode = {
     name: string;            // 節點名
     creator: string;         // 鏈上 address，顯示創建者
     gameUrl?: string;        // 點開跳轉的遊戲網址
+    difficulty: number;
   }

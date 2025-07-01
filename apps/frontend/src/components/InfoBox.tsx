@@ -8,9 +8,10 @@ interface InfoBoxProps {
   node: MapNode;
   pos: { x: number; y: number };
   onClose: () => void;
+  onStart?: () => void;
 }
 
-export default function InfoBox({ node, pos, onClose }: InfoBoxProps) {
+export default function InfoBox({ node, pos, onClose, onStart }: InfoBoxProps) {
   return (
     <div
       className="absolute z-50 flex flex-col items-center"
@@ -27,17 +28,22 @@ export default function InfoBox({ node, pos, onClose }: InfoBoxProps) {
           <span className="font-bold text-base text-blue-900 truncate" title={node.name}>{node.name}</span>
         </div>
         <div className="mb-1 text-blue-800"><span className="font-semibold">Creator:</span> {formatWalletAddress(node.creator)}</div>
-        <div className="mb-1 text-blue-800"><span className="font-semibold">Game URL:</span> {node.gameUrl ? <a href={node.gameUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600 hover:text-blue-800">{node.gameUrl}</a> : <span className="text-gray-400">-</span>}</div>
+        <div className="flex items-center gap-1 mb-1 text-blue-800">
+          <span className="font-semibold">Difficulty:</span>
+          <span className="flex items-center">
+            {Array.from({ length: node.difficulty || 1 }).map((_, i) => (
+              <span key={i} className="text-yellow-400" style={{fontSize:16}}>★</span>
+            ))}
+          </span>
+        </div>
         <div className="flex gap-2 mt-3">
           {node.gameUrl && (
-            <a
-              href={node.gameUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={onStart}
               className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs font-semibold shadow"
             >
               Start
-            </a>
+            </button>
           )}
           <button
             className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-xs font-semibold border border-gray-300 shadow"

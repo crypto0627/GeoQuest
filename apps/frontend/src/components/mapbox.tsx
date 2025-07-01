@@ -8,6 +8,7 @@ import { mockNodes } from "@/constants/nodeInfo";
 import MapboxNodeMarker from "./MapboxNodeMarker";
 import type { MapNode } from "@/types/nodeType";
 import InfoBox from "./InfoBox";
+import LaserCorridorGame from "./LaserCorridorGame";
 
 interface MapboxProps {
   center?: [number, number];
@@ -50,6 +51,8 @@ export default function Mapbox({
   const [visibleNodes, setVisibleNodes] = useState<MapNode[]>([]);
   const [infoBoxNode, setInfoBoxNode] = useState<MapNode | null>(null);
   const [infoBoxPos, setInfoBoxPos] = useState<{ x: number; y: number } | null>(null);
+  const [showGame, setShowGame] = useState(false);
+  const [gameNode, setGameNode] = useState<MapNode | null>(null);
 
   // Record initial user location (only on first render)
   useEffect(() => {
@@ -177,27 +180,42 @@ export default function Mapbox({
 
   return (
     <>
-      <div ref={mapContainer} className={className + " min-h-full min-w-full"} />
-      {/* User marker: fixed at userLocation using mapboxgl.Marker */}
-      {mapLoaded && <MapboxUserMarker mapRef={mapRef} userLocation={userLocation} />}
-      {/* Game node markers (within 50m) */}
-      {mapLoaded && visibleNodes.map((node) => (
-        <MapboxNodeMarker key={node.id} mapRef={mapRef} node={node} onClick={handleNodeClick} />
-      ))}
-      {/* Node Info Box (only shown above marker) */}
-      {infoBoxNode && infoBoxPos && (
-        <InfoBox node={infoBoxNode} pos={infoBoxPos} onClose={() => setInfoBoxNode(null)} />
+      {showGame && gameNode ? (
+        <LaserCorridorGame onClose={() => setShowGame(false)} />
+      ) : (
+        <>
+          <div ref={mapContainer} className={className + " min-h-full min-w-full"} />
+          {/* User marker: fixed at userLocation using mapboxgl.Marker */}
+          {mapLoaded && <MapboxUserMarker mapRef={mapRef} userLocation={userLocation} />}
+          {/* Game node markers (within 50m) */}
+          {mapLoaded && visibleNodes.map((node) => (
+            <MapboxNodeMarker key={node.id} mapRef={mapRef} node={node} onClick={handleNodeClick} />
+          ))}
+          {/* Node Info Box (only shown above marker) */}
+          {infoBoxNode && infoBoxPos && (
+            <InfoBox
+              node={infoBoxNode}
+              pos={infoBoxPos}
+              onClose={() => setInfoBoxNode(null)}
+              onStart={() => {
+                setGameNode(infoBoxNode);
+                setShowGame(true);
+                setInfoBoxNode(null);
+              }}
+            />
+          )}
+          {/* Locate button */}
+          <button
+            type="button"
+            onClick={handleLocate}
+            className="absolute bottom-6 right-6 z-30 bg-white rounded-full shadow-lg p-3 border border-neutral-200 hover:bg-blue-50 active:scale-95 transition"
+            aria-label="Go to default location"
+            style={{ boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)" }}
+          >
+            <Navigation size={28} className="text-blue-600" />
+          </button>
+        </>
       )}
-      {/* Locate button */}
-      <button
-        type="button"
-        onClick={handleLocate}
-        className="absolute bottom-6 right-6 z-30 bg-white rounded-full shadow-lg p-3 border border-neutral-200 hover:bg-blue-50 active:scale-95 transition"
-        aria-label="Go to default location"
-        style={{ boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)" }}
-      >
-        <Navigation size={28} className="text-blue-600" />
-      </button>
     </>
   );
 } 
